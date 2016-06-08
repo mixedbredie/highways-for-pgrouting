@@ -216,3 +216,53 @@ First, we create a view of the links involved in the turn restriction. We select
         WHERE b.sequence = 1 
         AND a.sequence = 0
         AND a.restriction = 'No Turn';
+
+### “Mandatory Turn” turn restrictions
+
+Mandatory turns are modelled in the dataset as turns which are allowed. So there is the entry link and the exit link which, together with the associated node make up the mandatory turn.  To create a restriction here to enforce the mandatory turn you need to select all the other links in the turn and restrict access to them so that the only way is Essex.
+
+Create a view of the entry link and associated node
+
+        CREATE OR REPLACE VIEW view_hw_mt_link1 AS
+        SELECT a.roadlink_toid,
+          b.ogc_fid, 
+          a.sequence,
+          a.applicabledirection, 
+          (CASE WHEN a.applicabledirection = 'inOppositeDirection' AND sequence = 0 THEN b.startnode 
+            WHEN a.applicabledirection = 'inDirection' AND sequence = 1 THEN b.startnode
+            ELSE b.endnode END) AS nodetoid,
+          b.centrelinegeometry 
+        FROM hw_turnrestriction_networkref a
+        INNER JOIN hw_roadlink b ON a.roadlink_toid = b.toid
+        WHERE a.restriction = 'Mandatory Turn'
+        AND a.sequence = 0;
+        
+Then create a view of the exit link.
+
+        CREATE OR REPLACE VIEW view_hw_mt_link2 AS
+        SELECT a.roadlink_toid,
+          b.ogc_fid, 
+          a.sequence,
+          a.applicabledirection, 
+          (CASE WHEN a.applicabledirection = 'inOppositeDirection' AND sequence = 0 THEN b.startnode 
+            WHEN a.applicabledirection = 'inDirection' AND sequence = 1 THEN b.startnode
+            ELSE b.endnode END) AS nodetoid,
+          b.centrelinegeometry  
+        FROM hw_turnrestriction_networkref a
+        INNER JOIN hw_roadlink b ON a.roadlink_toid = b.toid
+        WHERE restriction = 'Mandatory Turn'
+        AND sequence = 1;
+        
+Combine these to select the other links in the turn, the links you cannot turn into.
+
+        CREATE OR REPLACE VIEW view_hw_mt_nt_links AS
+        SELECT row_number() OVER () AS gid,
+          a.roadlink_toid AS from_toid,
+          a.ogc_fid AS from_fid,
+          b.toid AS to_toid,
+          b.ogc_fid AS to_fid
+        FROM view_hw_mt_link1 a
+        INNER JOIN hw_roadlink b ON (a.nodetoid = b.startnode OR a.nodetoid = b.endnode)
+        AND a.roadlink_toid <> b.toid
+        AND b.toid NOT IN (SELECT roadlink_toid FROM view_hw_mt_link2);
+        
