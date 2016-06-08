@@ -59,3 +59,38 @@ The start and end coordinates of the links are used in the Astar shortest path a
             x2 = st_x(st_endpoint(centrelinegeometry)),
             y2 = st_y(st_endpoint(centrelinegeometry));
 
+Setting the one_way flags helps pgRouting analyse the road network graph for errors.
+
+        UPDATE hw_roadlink SET one_way = 'B' WHERE directionality = 'bothDirections';
+        UPDATE hw_roadlink SET one_way = 'TF' WHERE directionality = 'inOppositeDirection';
+        UPDATE hw_roadlink SET one_way = 'FT' WHERE directionality = 'inDirection';
+
+Costs are what the routing engine uses to calculate the best route across the network.  In this example we are using **distance**, based on link length, and **time**, based on average speed for particular road classification and link length.  For links with one way directionality we set the reverse cost very high to discourage use.  pgRouting uses the digitised direction of the line to help with routing and the Highways layer helpfully has a field which tells us, for one way streets, which way the line has been drawn and which way the traffic is expected to flow.  For one way streets with traffic flow in the same direction as digitised direction the directionality flag is set to **inDirection**. For traffic flow contra to line direction it is set to **inOppositeDirection**. For links with two way flow of traffic it is set to **bothDirections**.
+
+Forward and reverse cost is the same for two way streets
+
+        UPDATE my_schema.hw_roadlink
+          SET cost_len = ST_Length(centrelinegeometry),
+              rcost_len = ST_Length(centrelinegeometry)
+          WHERE directionality IN ('bothDirections');
+
+Reverse costs are increased for one way streets
+
+        UPDATE my_schema.hw_roadlink
+          SET cost_len = ST_Length(centrelinegeometry),
+              rcost_len = ST_Length(centrelinegeometry)*100
+          WHERE directionality IN ('inDirection');
+        
+        UPDATE my_schema.hw_roadlink
+          SET rcost_len = ST_Length(centrelinegeometry),
+              cost_len = ST_Length(centrelinegeometry)*100
+          WHERE directionality IN ('inOppositeDirection');
+          
+To set the time cost I set an average speed based on the road classifiation and form of the road.  A tip here is to remember to set the speed for slip roads, traffic island links to be the same as the speed for the carriageway of the same class.  This prevents odd routing through complex junctions.
+
+Check what type of roads you are using with:
+
+        SELECT DISTINCT roadclassification, formofway
+          FROM my_schema.hw_roadlink
+          ORDER BY roadclassification;
+          
