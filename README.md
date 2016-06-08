@@ -189,3 +189,30 @@ Identify the links at nodes with problems
         SELECT gid FROM hw_roadlink a, hw_roadlink_vertices_pgr b WHERE a.source=b.id AND ein=0 OR eout=0
           UNION
         SELECT gid FROM hw_roadlink a, hw_roadlink_vertices_pgr b WHERE a.target=b.id AND ein=0 OR eout=0;
+
+## 6. Adding in turn restrictions
+
+### “No Turn” turn restrictions
+
+The Highways dataset provides tables of turn restrictions with a reference to the road links, the type of restriction and a turn sequence number.  The turn restriction table is joined to the road link table and is used to generate the turn restrictions in pgRouting format.
+
+First, we create a view of the links involved in the turn restriction. We select the FROM link with a sequence of 0 and the TO link with a sequence number of 1 where the restriction type is NO TURN.
+
+        CREATE OR REPLACE VIEW view_hw_nt_links AS
+        SELECT row_number() OVER () AS gid, 
+        	a.roadlink_toid AS from_link, 
+        	c.ogc_fid AS from_fid, 
+        	b.roadlink_toid AS to_link, 
+        	d.ogc_fid AS to_fid, 
+        	a.applicabledirection, 
+        	a.sequence AS from_seq, 
+        	b.sequence AS to_seq, 
+        	a.restriction, 
+        	c.centrelinegeometry
+        FROM hw_turnrestriction_networkref a
+        INNER JOIN hw_turnrestriction_networkref b ON a.toid = b.toid 
+        INNER JOIN hw_roadlink c ON c.toid = a.roadlink_toid
+        INNER JOIN hw_roadlink d ON d.toid = b.roadlink_toid
+        WHERE b.sequence = 1 
+        AND a.sequence = 0
+        AND a.restriction = 'No Turn';
