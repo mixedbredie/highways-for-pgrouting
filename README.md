@@ -1,7 +1,7 @@
 # highways-for-pgrouting
 Building OS Highways for pgRouting
 
-1. Load the data
+## 1. Load the data
 
 If you have Safe Software’s FME you can download the workbenches to create the database tables here: https://github.com/OrdnanceSurvey/OSMM-Highways-Network-Support but note that you will have to edit the workbenches to write to PostGIS instead of GeoPackage.  Not hard if you’ve used FME before.
 
@@ -25,7 +25,7 @@ The following tables are created by FME process:
 
 \* Tables used in this exercise
 
-2. Add the fields required for pgRouting
+## 2. Add the fields required for pgRouting
 
         ALTER TABLE my_schema.hw_roadlink
           ADD COLUMN source integer,
@@ -44,12 +44,12 @@ The following tables are created by FME process:
           ADD COLUMN rule text,
           ADD COLUMN isolated integer;
 
-3. Create indexes for speed
+## 3. Create indexes for speed
 
         CREATE INDEX hw_roadlink_source_idx ON my_schema.hw_roadlink USING btree(source);
         CREATE INDEX hw_roadlink_target_idx ON my_schema.hw_roadlink USING btree(target);
 
-4. Update new fields with values required for pgRouting
+## 4. Update new fields with values required for pgRouting
 
 The start and end coordinates of the links are used in the Astar shortest path algorithmto determine the links closest to the target shortest path solution.
 
@@ -147,7 +147,7 @@ Set the travel time costs for one way streets digitised against the traffic flow
               cost_time = ST_Length(centrelinegeometry)*100/1000.0/speed_km::numeric*3600.0
           WHERE directionality IN ('inOppositeDirection');
           
-5. Initial build of routing network
+## 5. Initial build of routing network
 
 Build network topology
 
