@@ -147,3 +147,45 @@ Set the travel time costs for one way streets digitised against the traffic flow
               cost_time = ST_Length(centrelinegeometry)*100/1000.0/speed_km::numeric*3600.0
           WHERE directionality IN ('inOppositeDirection');
           
+5. Initial build of routing network
+
+Build network topology
+
+        SELECT pgr_createTopology('my_schema.hw_roadlink', 0.001, 'centrelinegeometry', 'ogc_fid', 'source', 'target');
+
+Check topology for errors
+
+        SELECT pgr_analyzeGraph('my_schema.hw_roadlink', 0.001, ' centrelinegeometry ', 'ogc_fid', 'source', 'target'); 
+
+Check for one-way errors
+
+        SELECT pgr_analyzeOneway('my_schema.hw_roadlink',
+            ARRAY['', 'B', 'TF'],
+            ARRAY['', 'B', 'FT'],
+            ARRAY['', 'B', 'FT'],
+            ARRAY['', 'B', 'TF'],
+            oneway:='one_way'
+            );
+
+Identify links with problems
+
+        SELECT * FROM hw_roadlink_vertices_pgr WHERE chk = 1;
+
+Identify links with deadends
+        
+        SELECT * FROM hw_roadlink_vertices_pgr WHERE cnt = 1;
+
+Identify isolated segments
+
+        SELECT * FROM hw_roadlink a, hw_roadlink_vertices_pgr b, hw_roadlink_vertices_pgr c 
+        WHERE a.source = b.id AND b.cnt = 1 AND a.target = c.id AND c.cnt = 1;
+
+Identify nodes with problems
+
+        SELECT * FROM hw_roadlink_vertices_pgr WHERE ein = 0 OR eout = 0;
+
+Identify the links at nodes with problems
+
+        SELECT gid FROM hw_roadlink a, hw_roadlink_vertices_pgr b WHERE a.source=b.id AND ein=0 OR eout=0
+          UNION
+        SELECT gid FROM hw_roadlink a, hw_roadlink_vertices_pgr b WHERE a.target=b.id AND ein=0 OR eout=0;
