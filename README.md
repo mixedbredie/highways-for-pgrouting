@@ -48,3 +48,14 @@ The following tables are created by FME process:
 
         CREATE INDEX hw_roadlink_source_idx ON my_schema.hw_roadlink USING btree(source);
         CREATE INDEX hw_roadlink_target_idx ON my_schema.hw_roadlink USING btree(target);
+
+4. Update new fields with values required for pgRouting
+
+The start and end coordinates of the links are used in the Astar shortest path algorithmto determine the links closest to the target shortest path solution.
+
+        UPDATE my_schema.hw_roadlink 
+          SET x1 = st_x(st_startpoint(centrelinegeometry)),
+            y1 = st_y(st_startpoint(centrelinegeometry)),
+            x2 = st_x(st_endpoint(centrelinegeometry)),
+            y2 = st_y(st_endpoint(centrelinegeometry));
+
