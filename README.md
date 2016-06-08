@@ -94,3 +94,56 @@ Check what type of roads you are using with:
           FROM my_schema.hw_roadlink
           ORDER BY roadclassification;
           
+Set the road speed by classification and form. Adjust as required
+
+        UPDATE my_schema.hw_roadlink
+        SET speed_km = 
+        CASE
+        	WHEN roadclassification = 'A Road' AND formofway = 'Roundabout' THEN 40
+        	WHEN roadclassification = 'A Road' AND formofway = 'Dual Carriageway' THEN 100
+        	WHEN roadclassification = 'A Road' AND formofway = 'Traffic Island Link' THEN 100
+        	WHEN roadclassification = 'A Road' AND formofway = 'Slip Road' THEN 100
+        	WHEN roadclassification = 'A Road' AND formofway = 'Traffic Island Link At Junction' THEN 100
+        	WHEN roadclassification = 'A Road' AND formofway = 'Single Carriageway' THEN 100
+        	WHEN roadclassification = 'B Road' AND formofway = 'Single Carriageway' THEN 80
+        	WHEN roadclassification = 'B Road' AND formofway = 'Slip Road' THEN 80
+        	WHEN roadclassification = 'B Road' AND formofway = 'Roundabout' THEN 40
+        	WHEN roadclassification = 'B Road' AND formofway = 'Traffic Island Link At Junction' THEN 80
+        	WHEN roadclassification = 'Not Classified' AND formofway = 'Traffic Island Link' THEN 60
+        	WHEN roadclassification = 'Not Classified' AND formofway = 'Single Carriageway' THEN 60
+        	WHEN roadclassification = 'Not Classified' AND formofway = 'Roundabout' THEN 40
+        	WHEN roadclassification = 'Not Classified' AND formofway = 'Dual Carriageway' THEN 100
+        	WHEN roadclassification = 'Not Classified' AND formofway = 'Enclosed Traffic Area' THEN 40 
+        	WHEN roadclassification = 'Not Classified' AND formofway = 'Traffic Island Link At Junction' THEN 60
+        	WHEN roadclassification = 'Unclassified' AND formofway = 'Slip Road' THEN 40
+        	WHEN roadclassification = 'Unclassified' AND formofway = 'Enclosed Traffic Area' THEN 40
+        	WHEN roadclassification = 'Unclassified' AND formofway = 'Single Carriageway' THEN 40
+        	WHEN roadclassification = 'Unclassified' AND formofway = 'Layby' THEN 10
+        	WHEN roadclassification = 'Unclassified' AND formofway = 'Traffic Island Link At Junction' THEN 40
+        	WHEN roadclassification = 'Unclassified' AND formofway = 'Traffic Island Link' THEN 40
+        	WHEN roadclassification = 'Unclassified' AND formofway = 'Dual Carriageway' THEN 100
+        	WHEN roadclassification = 'Unclassified' AND formofway = 'Roundabout' THEN 40
+        	ELSE 1
+        END;
+        
+Update the travel time costs for two way roads.
+
+        UPDATE my_schema.hw_roadlink
+          SET cost_time = ST_Length(centrelinegeometry)/1000.0/speed_km::numeric*3600.0,
+              rcost_time = ST_Length(centrelinegeometry)/1000.0/speed_km::numeric*3600.0
+          WHERE directionality IN ('bothDirections');
+
+Update the travel time costs for one way streets digitised the same way as traffic flow.
+
+        UPDATE my_schema.hw_roadlink
+          SET cost_time = ST_Length(centrelinegeometry)/1000.0/speed_km::numeric*3600.0,
+              rcost_time = ST_Length(centrelinegeometry)*100/1000.0/speed_km::numeric*3600.0
+          WHERE directionality IN ('inDirection');
+
+Set the travel time costs for one way streets digitised against the traffic flow.
+
+        UPDATE my_schema.hw_roadlink
+          SET rcost_time = ST_Length(centrelinegeometry)/1000.0/speed_km::numeric*3600.0,
+              cost_time = ST_Length(centrelinegeometry)*100/1000.0/speed_km::numeric*3600.0
+          WHERE directionality IN ('inOppositeDirection');
+          
