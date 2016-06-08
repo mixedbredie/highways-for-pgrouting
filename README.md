@@ -332,3 +332,86 @@ Now use the view of nodes to build the restrictions at the grade separated node 
         AND a.directionality <> b.directionality;
 
 _NOTE: This may not be 100% correct but it works for the network in Angus as we have relatively simple network topologies._
+
+### Creating the turn restriction table for pgRouting
+
+We’ll create a table to hold the turn restriction data.  This is in the format FROM ID, TO ID, COST where the IDs are the road link IDs.
+
+        CREATE TABLE my_schema.hw_nt_restrictions
+        (  rid integer NOT NULL,
+          to_cost double precision,
+          teid integer,
+          feid integer,
+          via text )
+        WITH (
+          OIDS=FALSE
+        );
+        COMMENT ON TABLE my_schema.hw_nt_restrictions   IS 'Highways Turn Restrictions';
+
+Once we have the table we can fill it with the turn restriction records and then calculate the restriction cost.
+
+Insert the GRADE SEPARATION TURN restrictions first
+
+        INSERT INTO my_schema.hw_nt_restrictions(rid,feid,teid)
+          SELECT gid AS rid,
+          from_fid AS feid,
+          to_fid AS teid 
+          FROM view_hw_gs_nt_links v
+          WHERE v.to_fid <> 0
+          AND v.to_fid NOT IN (SELECT DISTINCT t.teid FROM my_schema.hw_nt_restrictions t WHERE t.rid = v.gid);
+
+Then the NO TURN restrictions
+
+        INSERT INTO my_schema.hw_nt_restrictions(rid,feid,teid)
+          SELECT gid AS rid,
+          from_fid AS feid,
+          to_fid AS teid 
+          FROM view_hw_nt_links v
+          WHERE v.to_fid <> 0
+          AND v.to_fid NOT IN (SELECT DISTINCT t.teid FROM my_schema.hw_nt_restrictions t WHERE t.rid = v.gid);
+
+Then the MANDATORY TURN restrictions
+
+        INSERT INTO my_schema.hw_nt_restrictions(rid,feid,teid)
+          SELECT gid AS rid,
+          from_fid AS feid,
+          to_fid AS teid 
+          FROM view_hw_mt_nt_links v
+          WHERE v.to_fid <> 0
+          AND v.to_fid NOT IN (SELECT DISTINCT t.teid FROM my_schema.hw_nt_restrictions t WHERE t.rid = v.gid);
+
+Lastly, the NO ENTRY turn restrictions
+
+        INSERT INTO my_schema.hw_nt_restrictions(rid,feid,teid)
+          SELECT gid AS rid,
+          from_fid AS feid,
+          to_fid AS teid 
+          FROM view_hw_ne_other_links v
+          WHERE v.to_fid <> 0
+          AND v.to_fid NOT IN (SELECT DISTINCT t.teid FROM my_schema.hw_nt_restrictions t WHERE t.rid = v.gid);
+
+Then we update the cost field to some high value.
+
+        UPDATE my_schema.hw_nt_restrictions SET to_cost = 9999;
+
+Use the following in the TRSP function in the pgRouting Layer plugin in QGIS
+
+        'select to_cost, teid as target_id, feid||coalesce('',''||via,'''') as via_path from hw_nt_restrictions'
+        
+At this point you will have a functional network topology that pgRouting will be able to use to generate reasonably accurate routes.  Paths will respect road restrictions and grade separations and the direction of traffic flow.
+
+## 7. Future work
+
+As this is the first release of Highways there is still work to be done on dataset attributes and adding in additional features.
+
+Things to considers:
+
+- Adding in vehicle restrictions
+- Road width
+- Bridge height
+- Bridge capacity
+- Hazards
+- Time restrictions
+- Better speed estimates and additional cost fields
+- Network subsets for public transport and safe routes
+- Integrating with rail networks and foot path networks
