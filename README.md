@@ -266,3 +266,69 @@ Combine these to select the other links in the turn, the links you cannot turn i
         AND a.roadlink_toid <> b.toid
         AND b.toid NOT IN (SELECT roadlink_toid FROM view_hw_mt_link2);
         
+### “No Entry” turn restrictions
+
+No entry restrictions are those links where it is legally forbidden to enter the link travelling the wrong way. The information is held in the AccessRestriction tables.
+
+First, select the node entry links and the associated road node into a view.
+
+        CREATE OR REPLACE VIEW my_schema.view_hw_ne_link AS
+        SELECT row_number() OVER () AS gid,
+          a.restriction, 
+          a.trafficsign, 
+          b.applicabledirection, 
+          b.atposition, 
+          b.roadlink_toid, 
+          c.ogc_fid,
+          (CASE WHEN b.applicabledirection = 'inOppositeDirection' THEN c.endnode ELSE c.startnode END) AS roadnode_toid,
+          c.centrelinegeometry
+        FROM hw_accessrestriction a
+        INNER JOIN hw_accessrestriction_networkref b ON a.toid = b.toid
+        INNER JOIN hw_roadlink c ON c.toid = b.roadlink_toid
+        WHERE a.trafficsign = 'No Entry';
+
+Then, select all the other links at that node and restrict turning into the no entry link.
+
+        CREATE OR REPLACE VIEW my_schema.view_hw_ne_other_links AS
+        SELECT row_number() OVER () AS gid, 
+          a.toid AS from_toid, 
+          a.ogc_fid AS from_fid, 
+          b.roadlink_toid AS to_toid, 
+          b.ogc_fid AS to_fid
+        FROM hw_roadlink a
+        INNER JOIN view_hw_ne_link b ON (b.roadnode_toid = a.startnode OR b.roadnode_toid = a.endnode)
+        AND a.toid <> b.roadlink_toid;
+        
+### “Grade Separation” turn restrictions
+
+These restrictions are built to stop your route dropping off the bridge onto the road below to find the shortest path between source and target.  They are created from the road nodes with a classification of “Grade Separation” and the associated road links.  Normally, there are four links associated to every node in an over- and underpass situation. So, for example, in the Angus network there are 41 nodes and 164 associated links.  First, create a view of all the nodes with associated links.
+
+        CREATE OR REPLACE VIEW my_schema.view_hw_gs_nodes AS 
+         SELECT row_number() OVER () AS id, 
+            rl.ogc_fid, rl.toid AS linktoid, 
+            rn.toid AS nodetoid, 
+            rl.startnode AS startnodetoid, 
+            rl.startgradeseparation, 
+            rl.endnode AS endnodetoid, 
+            rl.endgradeseparation,
+            rl.directionality, 
+            rn.classification, 
+            rn.geometry
+           FROM hw_roadlink rl, hw_roadnode rn
+          WHERE (rn.toid::text = rl.startnode::text OR rn.toid::text = rl.endnode::text) 
+          AND rn.classification::text = 'Grade Separation'::text;
+  
+Now use the view of nodes to build the restrictions at the grade separated node for each link
+
+        CREATE OR REPLACE VIEW view_hw_gs_nt_links AS
+        SELECT row_number() OVER () AS gid,
+          a.linktoid AS from_link,
+          a.ogc_fid AS from_fid,
+          b.linktoid AS to_link,
+          b.ogc_fid AS to_fid
+        FROM view_hw_gs_nodes a
+        JOIN view_hw_gs_nodes b ON a.nodetoid = b.nodetoid
+        WHERE a.linktoid <> b.linktoid
+        AND a.directionality <> b.directionality;
+
+_NOTE: This may not be 100% correct but it works for the network in Angus as we have relatively simple network topologies._
