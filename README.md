@@ -99,15 +99,19 @@ Set the road speed by classification and form. Adjust as required
         UPDATE my_schema.hw_roadlink
         SET speed_km = 
         CASE
+        	WHEN roadclassification = 'Motorway' AND formofway = 'Dual Carriageway' THEN 110
+        	WHEN roadclassification = 'Motorway' AND formofway = 'Slip Road' THEN 110
         	WHEN roadclassification = 'A Road' AND formofway = 'Roundabout' THEN 40
         	WHEN roadclassification = 'A Road' AND formofway = 'Dual Carriageway' THEN 100
         	WHEN roadclassification = 'A Road' AND formofway = 'Traffic Island Link' THEN 100
         	WHEN roadclassification = 'A Road' AND formofway = 'Slip Road' THEN 100
         	WHEN roadclassification = 'A Road' AND formofway = 'Traffic Island Link At Junction' THEN 100
         	WHEN roadclassification = 'A Road' AND formofway = 'Single Carriageway' THEN 100
+        	WHEN roadclassification = 'B Road' AND formofway = 'Dual Carriageway' THEN 100
         	WHEN roadclassification = 'B Road' AND formofway = 'Single Carriageway' THEN 80
         	WHEN roadclassification = 'B Road' AND formofway = 'Slip Road' THEN 80
         	WHEN roadclassification = 'B Road' AND formofway = 'Roundabout' THEN 40
+        	WHEN roadclassification = 'B Road' AND formofway = 'Traffic Island Link' THEN 80
         	WHEN roadclassification = 'B Road' AND formofway = 'Traffic Island Link At Junction' THEN 80
         	WHEN roadclassification = 'Not Classified' AND formofway = 'Traffic Island Link' THEN 60
         	WHEN roadclassification = 'Not Classified' AND formofway = 'Single Carriageway' THEN 60
@@ -115,6 +119,7 @@ Set the road speed by classification and form. Adjust as required
         	WHEN roadclassification = 'Not Classified' AND formofway = 'Dual Carriageway' THEN 100
         	WHEN roadclassification = 'Not Classified' AND formofway = 'Enclosed Traffic Area' THEN 40 
         	WHEN roadclassification = 'Not Classified' AND formofway = 'Traffic Island Link At Junction' THEN 60
+        	WHEN roadclassification = 'Not Classified' AND formofway = 'Slip Road' THEN 60
         	WHEN roadclassification = 'Unclassified' AND formofway = 'Slip Road' THEN 40
         	WHEN roadclassification = 'Unclassified' AND formofway = 'Enclosed Traffic Area' THEN 40
         	WHEN roadclassification = 'Unclassified' AND formofway = 'Single Carriageway' THEN 40
