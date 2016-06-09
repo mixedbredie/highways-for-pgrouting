@@ -306,6 +306,8 @@ Then, select all the other links at that node and restrict turning into the no e
         
 ### “Grade Separation” turn restrictions
 
+_This section needs some more thinking to work with more complex grade separated examples._
+
 These restrictions are built to stop your route dropping off the bridge onto the road below to find the shortest path between source and target.  They are created from the road nodes with a classification of “Grade Separation” and the associated road links.  Normally, there are four links associated to every node in an over- and underpass situation. So, for example, in the Angus network there are 41 nodes and 164 associated links.  First, create a view of all the nodes with associated links.
 
         CREATE OR REPLACE VIEW my_schema.view_hw_gs_nodes AS 
