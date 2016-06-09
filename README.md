@@ -3,7 +3,7 @@ Building OS Highways for pgRouting
 
 ## 1. Load the data
 
-If you have Safe Software’s FME you can download the workbenches to create the database tables here: https://github.com/OrdnanceSurvey/OSMM-Highways-Network-Support but note that you will have to edit the workbenches to write to PostGIS instead of GeoPackage.  Not hard if you’ve used FME before.
+If you have Safe Software’s FME you can download the workbenches to create the database tables here: https://github.com/OrdnanceSurvey/OSMM-Highways-Network-Support but note that you will have to edit the workbenches to write to PostGIS instead of GeoPackage.  Not hard if you’ve used FME before.  Other data loaders will support loading Highways data once the data structure is finalised.
 
 The following tables are created by FME process:
 
