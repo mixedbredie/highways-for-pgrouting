@@ -340,6 +340,8 @@ Now use the view of nodes to build the restrictions at the grade separated node 
 
 _NOTE: This may not be 100% correct but it works for the network in Angus as we have relatively simple network topologies._
 
+The difficulty is selecting each link in turn and making sure the correct links are selected to restrict travel at a different grade separation and only allow onward travel on the next link at the same elevation.
+
 ### Creating the turn restriction table for pgRouting
 
 We’ll create a table to hold the turn restriction data.  This is in the format FROM ID, TO ID, COST where the IDs are the road link IDs.
