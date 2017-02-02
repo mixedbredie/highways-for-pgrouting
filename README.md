@@ -1,6 +1,8 @@
 # highways-for-pgrouting
 Building [OS Highways](https://www.ordnancesurvey.co.uk/business-and-government/products/os-mastermap-highways-network.html) for [pgRouting](http://pgrouting.org/)
 
+These same notes and other pgrouting examples are also available [here](http://ghost.mixedbredie.net/building-highways-for-pgrouting/)
+
 ## 1. Load the data
 
 If you have Safe Software’s FME you can download the workbenches to create the database tables [here](https://github.com/OrdnanceSurvey/OSMM-Highways-Network-Support) but note that you will have to edit the workbenches to write to PostGIS instead of GeoPackage.  Not hard if you’ve used FME before.  Other data loaders will support loading Highways data once the data structure is finalised.
