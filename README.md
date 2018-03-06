@@ -260,6 +260,8 @@ Then create a view of the exit link.
         WHERE restriction = 'Mandatory Turn'
         AND sequence = 1;
         
+I'll need to add something herefor instances where there is more than one mandatory turn at the link and sequence = 2.
+
 Combine these to select the other links in the turn, the links you cannot turn into.
 
         CREATE OR REPLACE VIEW view_hw_mt_nt_links AS
